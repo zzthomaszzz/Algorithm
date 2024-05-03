@@ -1,5 +1,6 @@
 package main;
 
+import entity.Player;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -13,18 +14,17 @@ public class GamePanel extends JPanel implements Runnable{
     //Screen Settings
     final int originalTileSize = 16; // 16 * 16 tile
     final int scale = 3;
-    final int tileSize = originalTileSize * scale; // 48 * 48 tile
+    public final int tileSize = originalTileSize * scale; // 48 * 48 tile
     final int maxScreenCol = 16;
     final int maxScreenRow = 12;
     final int screenWidth = tileSize * maxScreenCol;
     final int screenHeight = tileSize * maxScreenRow;
     
+    int FPS = 60;
+    
     KeyHandler keyH = new KeyHandler();
     Thread gameThread;
-    
-    int playerX = 100;
-    int playerY = 100;
-    int playerSpeed = 4;
+    Player player = new Player(this, keyH);
     
     public GamePanel(){
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -43,46 +43,37 @@ public class GamePanel extends JPanel implements Runnable{
     public void run(){
         
         double drawInterval = 1000000000/FPS;
-        double nextDrawTime = System.nanoTime() + drawInterval;
+        double delta = 0;
+        long lastTime = System.nanoTime();
+        long currentTime;
         
         while(gameThread != null){
             
-            update();
+            currentTime = System.nanoTime();
             
-            repaint();
+            delta += (currentTime - lastTime) / drawInterval;
             
-            double remainingTime = nextDrawTime = System.nanoTime();
-            try {
-                Thread.sleep((long) remainingTime);
-            } catch (InterruptedException ex) {
-                Logger.getLogger(GamePanel.class.getName()).log(Level.SEVERE, null, ex);
+            lastTime = currentTime;
+            
+            if(delta >= 1){
+                update(); 
+                repaint();
+                delta--;
             }
+
         }
     }
     
     public void update(){
-        if(keyH.upPressed == true){
-            playerY -= playerSpeed;
-        }
-        if(keyH.downPressed == true){
-            playerY += playerSpeed;
-        }
-        if(keyH.leftPressed == true){
-            playerX -= playerSpeed;
-        }
-        if(keyH.rightPressed == true){
-            playerX += playerSpeed;
-        }
+        player.update();
     }
     
     public void paintComponent(Graphics g){
         super.paintComponent(g);
         
         Graphics2D g2 = (Graphics2D) g;
-        
-        g2.setColor(Color.white);
-        
-        g2.fillRect(playerX, playerY, tileSize, tileSize);
+
+        player.draw(g2);
         
         g2.dispose();
         
